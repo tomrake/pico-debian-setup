@@ -1,0 +1,6 @@
+#+TITLE: Install and compile pico-sdk on debian systems
+
+INSTALL_BASE= `cwd`
+
+
+echo "Installing in ${INSTALL_BASE}
