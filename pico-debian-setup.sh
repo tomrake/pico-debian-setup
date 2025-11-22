@@ -3,6 +3,20 @@
 # Exit on error
 set -e
 
+# Set for debuging partial builds
+SKIP_ARM_TOOLCHAIN=
+SKIP_RISCV_TOOLCHAIN=
+SKIP_TOOLS=
+
+if grep -q Raspberry /proc/cpuinfo; then
+    ON_PI=1
+    echo "Running on a Raspberry Pi"
+else
+    echo "Not running on a Raspberry Pi. Use at your own risk!"
+    SKIP_UART=1
+fi
+
+
 # TODO check for linux system here
 
 # The following is extracted from pico-vscode/data/0.18.0/supportedToolchains.ini
@@ -40,10 +54,12 @@ OUTDIR="$(pwd)/pico"
 
 OPENOCD_TAG="sdk-2.2.0"
 
+echo "### Start pico-debian-setup.sh on `date`" >> ~/.bashrc
 # Get the toolschains for pico arm and riscv
-
+TOOL_ARCHIVE="chain.gz"
 TOOLCHAINS="${OUTDIR}/pico-toolchains"
 mkdir -p "${TOOLCHAINS}"
+
 
 if [[ "${SKIP_ARM_TOOLCHAIN}" == 1 ]]; then
     echo "Skpping arm toolchain"
@@ -54,9 +70,10 @@ else
     cd "${CHAIN}"
     mkdir "tmp"
     cd "tmp"
-    curl  -L "${SOURCE_ARM_TOOLCHAIN}" > ./chain.zip
-    unzip -qq -d "../" "./chain.zip"
-    rm ./chain.zip
+    curl  -L "${SOURCE_ARM_TOOLCHAIN}" > "${TOOL_ARCHIVE}"
+    #    unzip -qq -d "../" "./chain.zip"
+    tar -xf "${TOOL_ARCHIVE}"
+    rm "${TOOL_ARCHIVE}"
     cd ..
     rm -rf "tmp"
 
@@ -87,9 +104,10 @@ if [[ "${SKIP_RISCV_TOOLCHAIN}" == 1 ]]; then
 	cd $CHAIN
 	mkdir "tmp"
 	cd "tmp"
-	curl  -L "${SOURCE_RISCV_TOOLCHAIN}" > ./chain.zip
-	unzip -qq -d "../" "./chain.zip"
-	rm ./chain.zip
+	curl  -L "${SOURCE_RISCV_TOOLCHAIN}" > "${TOOL_ARCHIVE}"
+	#    unzip -qq -d "../" "./chain.zip"
+	tar -xf "${TOOL_ARCHIVE}"
+	rm "${TOOL_ARCHIVE}"
 	cd ..
 	rm -rf "tmp"
 	# Define PICO_RISCV_TOOLCHAIN_PATH in ~/.bashrc
@@ -151,44 +169,47 @@ cd ${OUTDIR}
 source ~/.bashrc
 
 # Debugprobe and picotool
-for REPO in picotool debugprobe
-do
-    DEST="${OUTDIR}/${REPO}"
-    REPO_URL="${GITHUB_PREFIX}${REPO}${GITHUB_SUFFIX}"
-    if [[ "${REPO}" == "picotool" ]]; then
-      git clone -b ${SDK_BRANCH} ${REPO_URL}
-    else
-      git clone ${REPO_URL}
-    fi
+if [[ "${SKIP_TOOLS}" == 1 ]]; then
+    echo "Skipping picotool and debugprobe"
+else
+    for REPO in picotool debugprobe
+    do
+	DEST="${OUTDIR}/${REPO}"
+	REPO_URL="${GITHUB_PREFIX}${REPO}${GITHUB_SUFFIX}"
+	if [[ "${REPO}" == "picotool" ]]; then
+	    git clone -b ${SDK_BRANCH} ${REPO_URL}
+	else
+	    git clone ${REPO_URL}
+	fi
 
-    # Build both
-    cd ${DEST}
-    git submodule update --init
-    cmake -S . -B build -GNinja
-    cmake --build build
+	# Build both
+	cd ${DEST}
+	git submodule update --init
+	cmake -S . -B build -GNinja
+	cmake --build build
 
-    if [[ "${REPO}" == "picotool" ]]; then
-        echo "Installing picotool"
-        sudo cmake --install "$DEST/picotool"
-	# picoprobe and other depend on this directory existing.
-        VARNAME="PICOTOOL_FETCH_FROM_GIT_PATH"
-	echo "Adding $VARNAME to ~/.bashrc"
-        echo "export $VARNAME=$DEST" >> ~/.bashrc
-        export ${VARNAME}=$DEST
-    fi
+	if [[ "${REPO}" == "picotool" ]]; then
+            echo "Installing picotool"
+            sudo cmake --install build
+	    # picoprobe and other depend on this directory existing.
+            VARNAME="PICOTOOL_FETCH_FROM_GIT_PATH"
+	    echo "Adding $VARNAME to ~/.bashrc"
+            echo "export $VARNAME=$DEST" >> ~/.bashrc
+            export ${VARNAME}=$DEST
+	fi
 
-    cd ${OUTDIR}
-done
-
+	cd ${OUTDIR}
+    done
+fi
 # Build blink and hello world for default boards
 cd pico-examples
 for board in pico pico_w pico2 pico2_w
 do
     build_dir="build_${board}"
-    cmake -S . -B ${build_dir} -GNinja -DPICO_BOARD=${board} -DCMAKE_BUILD_TYPE=Debug
+    cmake -S . -B "${build_dir}" -GNinja -DPICO_BOARD=${board} -DCMAKE_BUILD_TYPE=Debug
     examples="blink hello_serial hello_usb"
     echo "Building $examples for ${board}"
-    cmake --build ${build_dir} --target "${examples}"
+    cmake --build "${build_dir}" --target ${examples}
 done
 
 cd ${OUTDIR}
@@ -204,17 +225,57 @@ else
     # Build OpenOCD
     echo "Building OpenOCD"
     cd ${OUTDIR}
-    OPENOCD_INSTALL_DIR="${OUTDIR}/openocd/"
-    OPENOCD_CONFIGURE_ARGS="--enable-ftdi --enable-sysfsgpio --enable-bcm2835gpio --disable-werror --enable-linuxgpiod"
-
+    OPENOCD_INSTALL_DIR="${OUTDIR}/openocd/openocd/"
+    OPENOCD_INSTALL_PREFIX=
+    OPENOCD_CONFIGURE_ARGS="--enable-ftdi  --disable-werror"
+    if [[ "${ON_PI}" == 1 ]]; then
+	OPENOCD_CONFIGURE_ARGS="${OPENOCD_CONFIGURE_ARGS} --enable-sysfsgpio --enable-bcm2835gpio  --enable-linuxgpiod"
+    else
+	OPENOCD_CONFIGURE_ARGS="${OPENOCD_CONFIGURE_ARGS} --enable-internal-jimtcl"
+	OPENOCD_INSTALL_PREFIX="--prefix=${OPENOCD_INSTALL_DIR}"
+    fi
     git clone "${GITHUB_PREFIX}openocd${GITHUB_SUFFIX}" -b ${OPENOCD_TAG} --depth=1
     cd openocd
+    if [[ "${ON_PI}" == 1 ]]; then
+	echo "No update to get internal jimtcl"
+    else
+	git submodule update --init
+    fi
     ./bootstrap
-    ./configure --prefix="${OPENOCD_INSTALL_DIR}" ${OPENOCD_CONFIGURE_ARGS}
+    echo "outdir: ${OUTDIR}" >> "${OUTDIR}/openocd.log"
+    echo "install dir: ${OPENOCD_INSTALL_DIR}"  >> "${OUTDIR}/openocd.log"
+    echo "prefix: ${OPENOCD_INSTALL_PREFIX}" >> "${OUTDIR}/openocd.log"
+    ./configure ${OPENOCD_INSTALL_PREFIX} ${OPENOCD_CONFIGURE_ARGS}
     make -j${JNUM}
-    sudo make install
+    make install
+    OPENOCD_BINARY="$OPENOCD_INSTALL_DIR/bin/openocd"
+    FILE="${OPENOCD_BINARY}"
+    if [ -f $FILE ]; then
+       echo "File $FILE exists."
+    else
+	echo "File $FILE does not exist."
+	exit 1
+    fi
+    VARNAME="OPENOCD_BINARY"
+    echo "Adding $VARNAME to ~/.bashrc"
+    echo "export $VARNAME=$OPENOCD_BINARY" >> ~/.bashrc
+    export ${VARNAME}=$OPENOCD_BINARY
 fi
 
 cd ${OUTDIR}
 
 
+# Enable UART
+if [[ "$SKIP_UART" == 1 ]]; then
+    echo "Skipping uart configuration"
+else
+    sudo apt install -y $UART_DEPS
+    echo "Disabling Linux serial console (UART) so we can use it for pico"
+
+    # Enable UART hardware
+    sudo raspi-config nonint do_serial_hw 0
+    # Disable console over serial port
+    sudo raspi-config nonint do_serial_cons 1
+
+    echo "You must run sudo reboot to finish UART setup"
+fi
