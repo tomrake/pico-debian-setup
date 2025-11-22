@@ -58,6 +58,8 @@ echo "### Start pico-debian-setup.sh on `date`" >> ~/.bashrc
 # Get the toolschains for pico arm and riscv
 TOOL_ARCHIVE="chain.gz"
 TOOLCHAINS="${OUTDIR}/pico-toolchains"
+
+
 mkdir -p "${TOOLCHAINS}"
 
 
@@ -66,18 +68,21 @@ if [[ "${SKIP_ARM_TOOLCHAIN}" == 1 ]]; then
 else
     cd "${TOOLCHAINS}"
     CHAIN="arm"
-    mkdir "${CHAIN}"
-    cd "${CHAIN}"
-    mkdir "tmp"
-    cd "tmp"
+    mkdir -p "${TOOLCHAINS}/${CHAIN}/tmp"
+    cd "${TOOLCHAINS}/${CHAIN}/tmp"
     curl  -L "${SOURCE_ARM_TOOLCHAIN}" > "${TOOL_ARCHIVE}"
     #    unzip -qq -d "../" "./chain.zip"
-    tar -xf "${TOOL_ARCHIVE}"
-    rm "${TOOL_ARCHIVE}"
-    cd ..
+    tar  -xf "${TOOL_ARCHIVE}" --strip-components=1 -C ".."
+    # The crosscomp;iler is unpacked - Fail things don't look good.
+    CHECKFILE="${TOOLCHAINS}/${CHAIN}/bin/arm-none-eabi-gcc"
+    if [[ -f "${CHECKFILE}" ]]; then
+	echo "Arm toolchain ${CHECKFILE} compiler found"
+    else
+	echo "Arm compiler $CHECKFILE not found"
+	exit 1
+    fi
+    cd .. 
     rm -rf "tmp"
-
-
     PICO_ARM_TOOLCHAIN_PATH="${TOOLCHAINS}/${CHAIN}"
     VARNAME="PICO_ARM_TOOLCHAIN_PATH"
     echo "Adding ${VARNAME} to ~/.bashrc"
@@ -100,16 +105,24 @@ if [[ "${SKIP_RISCV_TOOLCHAIN}" == 1 ]]; then
 
 
 	CHAIN="riscv"
-	mkdir "${CHAIN}"
-	cd $CHAIN
-	mkdir "tmp"
-	cd "tmp"
+	mkdir -p "${TOOLCHAINS}/${CHAIN}/tmp"
+	cd "${TOOLCHAINS}/${CHAIN}/tmp"
 	curl  -L "${SOURCE_RISCV_TOOLCHAIN}" > "${TOOL_ARCHIVE}"
 	#    unzip -qq -d "../" "./chain.zip"
-	tar -xf "${TOOL_ARCHIVE}"
-	rm "${TOOL_ARCHIVE}"
-	cd ..
+	tar  -xf "${TOOL_ARCHIVE}" -C ".."
+	# The crosscomp;iler is unpacked - Fail things don't look good.
+	CHECKFILE="${TOOLCHAINS}/${CHAIN}/bin/riscv32-unknown-elf-gcc"
+	if [[ -f "${CHECKFILE}" ]]; then
+	    echo "Arm toolchain ${CHECKFILE} compiler found"
+	else
+	    echo "Arm compiler ${CHECKFILE} not found"
+	    exit 1
+	fi
+	cd .. 
 	rm -rf "tmp"
+	
+
+
 	# Define PICO_RISCV_TOOLCHAIN_PATH in ~/.bashrc
 	PICO_RISCV_TOOLCHAIN_PATH="${TOOLCHAINS}/${CHAIN}"
         VARNAME="PICO_RISCV_TOOLCHAIN_PATH"
