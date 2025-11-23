@@ -1,5 +1,16 @@
 #! /bin/bash
 
+function check_file_test() {
+    if [[ -f "$1" ]]; then
+	echo "$1 was found"
+    else
+	echo "$1 was not found."
+	exit 1
+    fi
+}
+
+
+
 # Exit on error
 set -e
 
@@ -73,13 +84,8 @@ else
     #    unzip -qq -d "../" "./chain.zip"
     tar  -xf "${TOOL_ARCHIVE}" --strip-components=1 -C ".."
     # The crosscomp;iler is unpacked - Fail things don't look good.
-    CHECKFILE="${TOOLCHAINS}/${CHAIN}/bin/arm-none-eabi-gcc"
-    if [[ -f "${CHECKFILE}" ]]; then
-	echo "Arm toolchain ${CHECKFILE} compiler found"
-    else
-	echo "Arm compiler $CHECKFILE not found"
-	exit 1
-    fi
+    check_file_test "${TOOLCHAINS}/${CHAIN}/bin/arm-none-eabi-gcc"
+
     cd .. 
     rm -rf "tmp"
     PICO_ARM_TOOLCHAIN_PATH="${TOOLCHAINS}/${CHAIN}"
@@ -110,13 +116,9 @@ if [[ "${SKIP_RISCV_TOOLCHAIN}" == 1 ]]; then
 	#    unzip -qq -d "../" "./chain.zip"
 	tar  -xf "${TOOL_ARCHIVE}" -C ".."
 	# The crosscomp;iler is unpacked - Fail things don't look good.
-	CHECKFILE="${TOOLCHAINS}/${CHAIN}/bin/riscv32-unknown-elf-gcc"
-	if [[ -f "${CHECKFILE}" ]]; then
-	    echo "Arm toolchain ${CHECKFILE} compiler found"
-	else
-	    echo "Arm compiler ${CHECKFILE} not found"
-	    exit 1
-	fi
+	#CHECKFILE="${TOOLCHAINS}/${CHAIN}/bin/riscv32-unknown-elf-gcc"
+	check_file_test "${TOOLCHAINS}/${CHAIN}/bin/riscv32-unknown-elf-gcc"
+
 	cd .. 
 	rm -rf "tmp"
 	
@@ -165,6 +167,8 @@ do
         # Any submodules
         cd ${DEST}
         git submodule update --init
+	check_file_test "${DEST}/README.md"
+
         cd ${OUTDIR}
 
         # Define PICO_SDK_PATH in ~/.bashrc
@@ -199,28 +203,38 @@ else
 	git submodule update --init
 	cmake -S . -B build -GNinja
 	cmake --build build
-
+	TOOL_BUILD_DIR="${DEST}/build"
+	
 	if [[ "${REPO}" == "picotool" ]]; then
             echo "Installing picotool"
             cmake --install build  --prefix "${DEST}/picotool"
 	    # picoprobe and other depend on this directory existing.
-	    CHECKFILE="${DEST}/picotool/bin/picotool"
-            if [[ -f "$CHECKFILE" ]]; then
-		echo "picotool install found at ${CHECKFILE}"
-	    else
-		echo "picotool install not found: ${CHECKFILE}"
-		exit 1
-	    fi
+	    check_file_test "${DEST}/picotool/bin/picotool"
 
 	    VARNAME="PICOTOOL_FETCH_FROM_GIT_PATH"
 	    echo "Adding $VARNAME to ~/.bashrc"
             echo "export $VARNAME=$DEST" >> ~/.bashrc
             export ${VARNAME}=$DEST
 
-	    VARNAME="PICOTOOL_BINARY"
+	    VARNAME="PICOTOOL_DIR"
 	    echo "Adding $VARNAME to ~/.bashrc"
-            echo "export $VARNAME=${CHECKFILE}" >> ~/.bashrc
-            export ${VARNAME}=$DEST
+            echo "export $VARNAME=${DEST}/picotool/bin" >> ~/.bashrc
+            export ${VARNAME}="${DEST}/picotool/bin"
+	    
+	    VARNAME="PICOTOOL_NAME"
+	    echo "Adding $VARNAME to ~/.bashrc"
+            echo "export $VARNAME=picotool" >> ~/.bashrc
+            export ${VARNAME}="picotool"
+	    
+	elif [[ "${REPO}" == "debugprobe" ]]; then
+	    for PROD in debugprobe.bin debugprobe.elf debugprobe.uf2
+	    do
+		check_file_test "${TOOL_BUILD_DIR}/${PROD}"
+	    done
+	    VARNAME="DEBUGPROBE_PATH"
+	    echo "Adding $VARNAME to ~/.bashrc"
+            echo "export $VARNAME=${TOOL_BUILD_DIR}" >> ~/.bashrc
+            export ${VARNAME}=$TOOL_BUILD_DIR
 	fi
 
 	cd ${OUTDIR}
@@ -275,17 +289,17 @@ else
     make -j${JNUM}
     make install
     OPENOCD_BINARY="$OPENOCD_INSTALL_DIR/bin/openocd"
+    check_file_test "${OPENOCD_BINARY}"
     FILE="${OPENOCD_BINARY}"
-    if [ -f $FILE ]; then
-       echo "File $FILE exists."
-    else
-	echo "File $FILE does not exist."
-	exit 1
-    fi
-    VARNAME="OPENOCD_BINARY"
+    VARNAME="OPENOCD_DIR"
     echo "Adding $VARNAME to ~/.bashrc"
-    echo "export $VARNAME=$OPENOCD_BINARY" >> ~/.bashrc
-    export ${VARNAME}=$OPENOCD_BINARY
+    echo "export $VARNAME=$OPENOCD_INSTALL_DIR/bin" >> ~/.bashrc
+    export ${VARNAME}="$OPENOCD_DIR_INSTALL/bin"
+
+    VARNAME="OPENOCD_NAME"
+    echo "Adding $VARNAME to ~/.bashrc"
+    echo "export $VARNAME=openocd" >> ~/.bashrc
+    export ${VARNAME}="openocd"  
 fi
 
 cd ${OUTDIR}

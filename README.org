@@ -1,6 +1,43 @@
 #+TITLE: Install and compile pico-sdk on debian systems
+* Philosophy
+Have all the required code and tools for pico development in a single *pico* directory.
+Let the OS provide all tools necessary to download and build the pico tools.
+* Derivation of this repo
+This project is a clone of [[https://github.com/raspberrypi/pico-setup]], this is a Raspberry Pi hardware focused setup, which I modified.
+The original RP Setup script is a description of the "specification" for installation setup of C/C++ RP Pico development system, my changes extend that specification.
+** Include the toolchains
+The crosscompilation tool chains are installed in *pics*/pico-toolchains.
+** Enviroment variables
+Following the orginal specification all environment variables are set in ~/.bashrc.
+A comment marker is set in ~/.bashrc to date the execution of this script, this is useful when debugging build failures.
+Missing tool compile products will cause a failure before an enviroment variable is set.
 
-INSTALL_BASE= `cwd`
+Many enviroment variables are references by sdk code, when possible I use these and set some to values within the *pico* directory.
+Links to crosscompilation tool chain are orginally specified are are set.
+Links to the source part of the pico-sdk are orginally specified and set.
+A link to git source code for the picotool was originally specified and set.
+Tools like picotool, debugprobe and openocd were not defined, the install location of these tools is now specified and set.
+*  Proposed Variables
+  - picotool should be called "${PICOTOOL_DIR}/${PICOTOOL_NAME}"
+  - openocd should be called "${OPENOCD_DIR}/${OPENOCD_NAME}"
+  - debugprobe files are located in "${DEBUGPROBE_DIR}" where these and others are installed.
+    - debugprobe.elf
+    - debugprobe.u2f
 
 
-echo "Installing in ${INSTALL_BASE}
+
+
+* OS Version
+#+begin_quote
+Distributor ID: Debian
+Description:    Debian GNU/Linux 12 (bookworm)
+Release:        12
+Codename:       bookworm
+
+#+end_quote
+At this writting this is the oldstable debian.
+
+* jimtcl issues
+Openocd has an internal version of jimtcl, Debian bookworm has an older version of jimtcl this requires openocd to be configured with --enable-internal-jimtcl.
+As well as the openocd git repo to have submodules updated and inited.
+
