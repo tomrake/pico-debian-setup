@@ -12,7 +12,6 @@ if grep -q Raspberry /proc/cpuinfo; then
     ON_PI=1
     echo "Running on a Raspberry Pi"
 else
-    echo "Not running on a Raspberry Pi. Use at your own risk!"
     SKIP_UART=1
 fi
 
@@ -203,17 +202,31 @@ else
 
 	if [[ "${REPO}" == "picotool" ]]; then
             echo "Installing picotool"
-            sudo cmake --install build
+            cmake --install build  --prefix "${DEST}/picotool"
 	    # picoprobe and other depend on this directory existing.
-            VARNAME="PICOTOOL_FETCH_FROM_GIT_PATH"
+	    CHECKFILE="${DEST}/picotool/bin/picotool"
+            if [[ -f "$CHECKFILE" ]]; then
+		echo "picotool install found at ${CHECKFILE}"
+	    else
+		echo "picotool install not found: ${CHECKFILE}"
+		exit 1
+	    fi
+
+	    VARNAME="PICOTOOL_FETCH_FROM_GIT_PATH"
 	    echo "Adding $VARNAME to ~/.bashrc"
             echo "export $VARNAME=$DEST" >> ~/.bashrc
+            export ${VARNAME}=$DEST
+
+	    VARNAME="PICOTOOL_BINARY"
+	    echo "Adding $VARNAME to ~/.bashrc"
+            echo "export $VARNAME=${CHECKFILE}" >> ~/.bashrc
             export ${VARNAME}=$DEST
 	fi
 
 	cd ${OUTDIR}
     done
 fi
+source ~/.bashrc
 # Build blink and hello world for default boards
 cd pico-examples
 for board in pico pico_w pico2 pico2_w
