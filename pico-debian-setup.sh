@@ -270,6 +270,8 @@ else
     OPENOCD_CONFIGURE_ARGS="--enable-ftdi  --disable-werror"
     if [[ "${ON_PI}" == 1 ]]; then
 	OPENOCD_CONFIGURE_ARGS="${OPENOCD_CONFIGURE_ARGS} --enable-sysfsgpio --enable-bcm2835gpio  --enable-linuxgpiod"
+    elif [ `cat /etc/debian_version` \> 12.999 ];  then
+	OPENOCD_INSTALL_PREFIX="--prefix=${OPENOCD_INSTALL_DIR}"
     else
 	OPENOCD_CONFIGURE_ARGS="${OPENOCD_CONFIGURE_ARGS} --enable-internal-jimtcl"
 	OPENOCD_INSTALL_PREFIX="--prefix=${OPENOCD_INSTALL_DIR}"
