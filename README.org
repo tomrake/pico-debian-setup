@@ -30,8 +30,8 @@ Tools like picotool, debugprobe and openocd were not defined, the install locati
 * OS Version
 #+begin_quote
 Distributor ID: Debian
-Description:    Debian GNU/Linux 12 (bookworm)
-Release:        12
+Description:    Debian GNU/Linux 13 (trixie)
+Release:        13
 Codename:       bookworm
 
 #+end_quote
@@ -41,3 +41,28 @@ At this writting this is the oldstable debian.
 Openocd has an internal version of jimtcl, Debian bookworm has an older version of jimtcl this requires openocd to be configured with --enable-internal-jimtcl.
 As well as the openocd git repo to have submodules updated and inited.
 
+* Debian Packages used
+
+On December 7, 2025 I upgrade my laptop to Debian Trixie, during that upgrade I reinstalled the packages used to support pico-debians-setup.sh
+
+I am using KDE/Plasma for my Desktop OS.
+
+Packages I installed
+- build-essential
+- automake
+- python3
+- python3-pip
+- pyhton3-virtualdenv
+- KDE
+- openssh-server
+- keepassxc
+- emacs
+- ninja-build
+- curl
+- libtool
+- libtool-bin
+- libjim-dev
+- pkg-config
+- libusb-1.0-0
+- libusb-1.0-0-dev
+- minicom
