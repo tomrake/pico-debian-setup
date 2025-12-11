@@ -1,5 +1,9 @@
 #! /bin/bash
-
+#
+# Copyright (c) 2025 Thomas W. Rake.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
 function check_file_test() {
     if [[ -f "$1" ]]; then
 	echo "$1 was found"

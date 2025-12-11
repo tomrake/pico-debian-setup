@@ -1,51 +1,52 @@
 #+TITLE: Install and compile pico-sdk on debian systems
+* About
+install-pico-debian.sh is a bash installed script,
+which is derived from the pico-setup.sh script from https://gihub.com/raspberrypi/pico-setup.
+
+* LICENSE
+
+BSD-3-Clause
+
+The <owner> is Thomas W. Rake
+The <year> is 2025
+
+** The orginical code
+
+This a derividive work of the file [[https://github.com/raspberrypi/pico-setup/blob/master/pico_setup.sh][pico_setup.sh]] from the [[https://github.com/raspberrypi/pico-setup][this github repository]], the *orginial code*  that repository contained no license information.
+I beleive in keeping pattern of Raspberry Pi the copyright of the *original code* is held by Raspberry Pi (Trading) Ltd.
+The authors of [[https://github.com/raspberrypi/pico-setup/blob/master/pico_setup.sh][pico_setup.sh]] are various contributers list on that repo.
+** The owner fo the original code
+The owner of the *original code* is Raspberry PI (Trading) Ltd
+
+As witness I reference  [[https://github.com/raspberrypi/pico-sdk/blob/master/src/boards/include/boards/pico.h][pico.h]] file and note of the Raspberry PI, pico-sdk:
+#+begin_src emacs-lisp
+/*
+ * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+#+end_src
+
 * Philosophy
-Have all the required code and tools for pico development in a single *pico* directory.
-Let the OS provide all tools necessary to download and build the pico tools.
-* Derivation of this repo
-This project is a clone of [[https://github.com/raspberrypi/pico-setup]], this is a Raspberry Pi hardware focused setup, which I modified.
-The original RP Setup script is a description of the "specification" for installation setup of C/C++ RP Pico development system, my changes extend that specification.
-** Include the toolchains
-The crosscompilation tool chains are installed in *pics*/pico-toolchains.
-** Enviroment variables
-Following the orginal specification all environment variables are set in ~/.bashrc.
-A comment marker is set in ~/.bashrc to date the execution of this script, this is useful when debugging build failures.
-Missing tool compile products will cause a failure before an enviroment variable is set.
-
-Many enviroment variables are references by sdk code, when possible I use these and set some to values within the *pico* directory.
-Links to crosscompilation tool chain are orginally specified are are set.
-Links to the source part of the pico-sdk are orginally specified and set.
-A link to git source code for the picotool was originally specified and set.
-Tools like picotool, debugprobe and openocd were not defined, the install location of these tools is now specified and set.
-*  Proposed Variables
-  - picotool should be called "${PICOTOOL_DIR}/${PICOTOOL_NAME}"
-  - openocd should be called "${OPENOCD_DIR}/${OPENOCD_NAME}"
-  - debugprobe files are located in "${DEBUGPROBE_DIR}" where these and others are installed.
-    - debugprobe.elf
-    - debugprobe.u2f
+The *original code* outlines a method for installing code and compiling tools on a Debian-based OS system using Raspberry Pi hardware.
+Based on the method in the *original code*, this code does a similar task for AMD64 systems.
+The cross-compilation toolchains needed for are also included in the installation.
 
 
+* Features of the *original code*
+- A central *pico* location for installation.
+- Exporting environment locations of the *original code* are included in ~/.bashrc file.
 
-
-* OS Version
-#+begin_quote
-Distributor ID: Debian
-Description:    Debian GNU/Linux 13 (trixie)
-Release:        13
-Codename:       bookworm
-
-#+end_quote
-At this writting this is the oldstable debian.
-
-* jimtcl issues
-Openocd has an internal version of jimtcl, Debian bookworm has an older version of jimtcl this requires openocd to be configured with --enable-internal-jimtcl.
-As well as the openocd git repo to have submodules updated and inited.
+* Additional Features
+- Abandon apt dependencies installation of *original code* in favor of installation failure.
+- Create a pico-toolchain directory as a subdirectory of *pico*.
+- Create additional environment locations in ~/.bashrc for markers of the compiled tools such as picotool and openocd.
 
 * Debian Packages used
 
-On December 7, 2025 I upgrade my laptop to Debian Trixie, during that upgrade I reinstalled the packages used to support pico-debians-setup.sh
+On December 7, 2025, I upgraded my laptop to Debian Trixie. During that installation, the packages used to support pico-debians-setup.sh
 
-I am using KDE/Plasma for my Desktop OS.
+I am using KDE/Plasma as my Desktop OS.
 
 Packages I installed
 - build-essential
@@ -66,3 +67,5 @@ Packages I installed
 - libusb-1.0-0
 - libusb-1.0-0-dev
 - minicom
+
+
