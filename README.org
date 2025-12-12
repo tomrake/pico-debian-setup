@@ -7,10 +7,10 @@ which is derived from the pico-setup.sh script from https://gihub.com/raspberryp
 
 BSD-3-Clause
 
-The <owner> is Thomas W. Rake
-The <year> is 2025
+The <owner> Thomas W. Rake
+The <year>  2025
 
-** The orginical code
+** The original code
 
 This a derividive work of the file [[https://github.com/raspberrypi/pico-setup/blob/master/pico_setup.sh][pico_setup.sh]] from the [[https://github.com/raspberrypi/pico-setup][this github repository]], the *orginial code*  that repository contained no license information.
 I beleive in keeping pattern of Raspberry Pi the copyright of the *original code* is held by Raspberry Pi (Trading) Ltd.
